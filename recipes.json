@@ -1,0 +1,58 @@
+[
+    {
+        "id": 1,
+        "title": "Pancakes",
+        "ingredients": [
+            "Farine",
+            "Lait",
+            "Oeufs",
+            "Sucre",
+            "Levure"
+        ],
+        "steps": [
+            "Mélanger les ingrédients",
+            "Cuire à la poêle"
+        ],
+        "servings": 4,
+        "prep_time_minutes": 20
+    },
+    {
+        "id": 2,
+        "title": "Salade César",
+        "ingredients": [
+            "Salade",
+            "Poulet",
+            "Parmesan",
+            "Croûtons",
+            "Sauce César"
+        ],
+        "steps": [
+            "Préparer les ingrédients",
+            "Mélanger la salade avec le poulet et la sauce"
+        ],
+        "servings": 2,
+        "prep_time_minutes": 15
+    },
+    {
+        "id": 3,
+        "title": "couscous",
+        "ingredients": [
+            "1kg couscous",
+            "4 tomates",
+            "500 gr de viandes",
+            "3 carrotes",
+            "2 onions"
+        ],
+        "steps": [
+            "onion",
+            "tomate",
+            "viande",
+            "carrotes",
+            "mettre le couscous en vapeur"
+        ],
+        "servings": 4,
+        "prep_time_minutes": 120
+    }
+    
+    
+]
