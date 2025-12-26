@@ -52,7 +52,29 @@
         ],
         "servings": 4,
         "prep_time_minutes": 120
+    },
+    {
+        "id": 4,
+        "title": "Lazagne",
+        "ingredients": [
+            "sauce tomate",
+            "viande hachés",
+            "fromages",
+            "chedar",
+            "lazagne",
+            "sauce blanche"
+        ],
+        "steps": [
+            "preparer sauce tomate",
+            "preparer sauce blanche",
+            "moule",
+            "mettre sauce blanche",
+            "mettre une couche de lazagne",
+            "ajouter des sauces",
+            "refaire ces etapes",
+            "ajouter du fromage"
+        ],
+        "servings": 6,
+        "prep_time_minutes": 60
     }
-    
-    
 ]
