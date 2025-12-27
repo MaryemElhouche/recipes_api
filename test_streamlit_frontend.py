@@ -21,17 +21,20 @@ class TestStreamlitFrontend:
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-        
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--disable-gpu")
+        chrome_options.add_argument("--window-size=1920,1080")
+
         self.driver = webdriver.Chrome(options=chrome_options)
         self.driver.set_page_load_timeout(30)
         self.driver.implicitly_wait(10)
         self.wait = WebDriverWait(self.driver, 10)
-        
+
         self.driver.get(STREAMLIT_URL)
         time.sleep(4)
-        
+
         yield
-        
+
         self.driver.quit()
     
     def click_menu_item(self, menu_text):
