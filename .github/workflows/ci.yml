@@ -31,10 +31,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-      - name: Run Bandit SAST scan
-        run: |
-          pip install bandit
-          bandit -r . -x venv,__pycache__ -ll
+    - name: Run Bandit SAST scan
+      run: |
+        pip install bandit
+        bandit -r . -x venv,__pycache__ -ll
 
     - name: Start Streamlit app
       run: |
