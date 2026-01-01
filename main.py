@@ -1,11 +1,33 @@
+
+
 import json
-from fastapi import FastAPI, HTTPException
+import uuid
+import time
+from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel
 from typing import List, Optional
 from loguru import logger
-from time import time
+from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
+
+
 
 app = FastAPI(title="API Recettes Cuisine")
+
+# Prometheus metrics
+REQUEST_COUNT = Counter('request_count', 'Total HTTP requests', ['method', 'endpoint', 'http_status'])
+REQUEST_LATENCY = Histogram('request_latency_seconds', 'HTTP request latency', ['endpoint'])
+ERROR_COUNT = Counter('error_count', 'Total errors', ['endpoint'])
+
+# --- Observability metrics ---
+metrics = {
+    "request_count": 0,
+    "total_response_time": 0.0,
+    "endpoint_counts": {},  # endpoint: count
+    "error_count": 0,
+    "status_codes": {},     # status_code: count
+}
+
 
 FILE_DB = "recipes.json"
 
@@ -18,10 +40,40 @@ class Recipe(BaseModel):
     servings: int
     prep_time_minutes: int
 
+
+# --- Middleware for logging and metrics ---
+@app.middleware("http")
+async def log_and_metrics_middleware(request: Request, call_next):
+    trace_id = str(uuid.uuid4())
+    start_time = time.time()
+    endpoint = request.url.path
+    logger.info(f"[TRACE_ID={trace_id}] Incoming request: {request.method} {request.url}")
+    try:
+        response: Response = await call_next(request)
+        process_time = time.time() - start_time
+        REQUEST_COUNT.labels(request.method, endpoint, response.status_code).inc()
+        REQUEST_LATENCY.labels(endpoint).observe(process_time)
+        logger.info(f"[TRACE_ID={trace_id}] Response status: {response.status_code} in {process_time:.4f}s")
+        response.headers["X-Trace-Id"] = trace_id
+        return response
+    except Exception as e:
+        ERROR_COUNT.labels(endpoint).inc()
+        logger.error(f"[TRACE_ID={trace_id}] Error: {e}")
+        REQUEST_COUNT.labels(request.method, endpoint, 500).inc()
+        return JSONResponse(status_code=500, content={"detail": "Internal Server Error", "trace_id": trace_id})
+
 # --- Fonctions utilitaires pour gérer le fichier ---
 @app.get("/")
 def root():
-    return {"message": "Bienvenue sur l'API Recettes Cuisine!"}
+    trace_id = str(uuid.uuid4())
+    return {"message": "Bienvenue sur l'API Recettes Cuisine!", "trace_id": trace_id}
+# --- Endpoints CRUD ---
+
+
+# --- Prometheus Metrics endpoint ---
+@app.get("/metrics")
+def metrics():
+    return PlainTextResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 def load_recipes() -> List[Recipe]:
     try:

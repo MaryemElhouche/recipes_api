@@ -9,27 +9,27 @@ st.title("🍳 Recettes de Cuisine")
 
 # --- Fonctions CRUD via API ---
 def get_recipes():
-    resp = requests.get(API_URL)
+    resp = requests.get(API_URL, timeout=5)
     if resp.status_code == 200:
         return resp.json()
     return []
 
 def get_recipe(recipe_id):
-    resp = requests.get(f"{API_URL}/{recipe_id}")
+    resp = requests.get(f"{API_URL}/{recipe_id}", timeout=5)
     if resp.status_code == 200:
         return resp.json()
     return None
 
 def add_recipe(data):
-    resp = requests.post(API_URL, json=data)
+    resp = requests.post(API_URL, json=data, timeout=5)
     return resp
 
 def update_recipe(recipe_id, data):
-    resp = requests.put(f"{API_URL}/{recipe_id}", json=data)
+    resp = requests.put(f"{API_URL}/{recipe_id}", json=data, timeout=5)
     return resp
 
 def delete_recipe(recipe_id):
-    resp = requests.delete(f"{API_URL}/{recipe_id}")
+    resp = requests.delete(f"{API_URL}/{recipe_id}", timeout=5)
     return resp
 
 # --- Interface Streamlit ---
