@@ -1,8 +1,8 @@
 
-
 import json
 import uuid
 import time
+
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel
@@ -11,13 +11,22 @@ from loguru import logger
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 
 
-
+# --- Création de l'app FastAPI ---
 app = FastAPI(title="API Recettes Cuisine")
+
+# --- Endpoint de test pour générer une erreur 500 ---
+@app.get("/crash")
+def crash():
+    1 / 0  # Provoque une ZeroDivisionError (erreur 500)
+
 
 # Prometheus metrics
 REQUEST_COUNT = Counter('request_count', 'Total HTTP requests', ['method', 'endpoint', 'http_status'])
 REQUEST_LATENCY = Histogram('request_latency_seconds', 'HTTP request latency', ['endpoint'])
 ERROR_COUNT = Counter('error_count', 'Total errors', ['endpoint'])
+
+# Import metrics_initializer APRÈS la déclaration des métriques
+import metrics_initializer
 
 # --- Observability metrics ---
 metrics = {
