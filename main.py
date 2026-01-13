@@ -62,6 +62,12 @@ def root():
     trace_id = str(uuid.uuid4())
     return {"message": "Bienvenue sur l'API Recettes Cuisine!", "trace_id": trace_id}
 
+
+# --- Health check endpoint ---
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 @app.get("/metrics")
 def metrics():
     return PlainTextResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)
