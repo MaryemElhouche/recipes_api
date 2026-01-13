@@ -2,7 +2,7 @@
 version: '3.8'
 services:
   api:
-    image: maryem373/myapi:latest
+    build: .
     container_name: recettes_api
     ports:
       - "8000:8000"
