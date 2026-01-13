@@ -57,3 +57,33 @@ def test_delete_recipe():
     response = client.delete(f"/recipes/{test_recipe['id']}")
     assert response.status_code == 200
     assert "supprimée" in response.json()["message"]
+
+
+# --- Additional Tests ---
+def test_health():
+    """Test the /health endpoint returns status ok."""
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+def test_get_nonexistent_recipe():
+    """Test getting a non-existent recipe returns 404."""
+    response = client.get("/recipes/123456789")
+    assert response.status_code == 404
+
+def test_update_nonexistent_recipe():
+    """Test updating a non-existent recipe returns 404."""
+    fake_recipe = test_recipe.copy()
+    fake_recipe["id"] = 123456789
+    response = client.put(f"/recipes/123456789", json=fake_recipe)
+    assert response.status_code == 404
+
+def test_delete_nonexistent_recipe():
+    """Test deleting a non-existent recipe returns 404."""
+    response = client.delete("/recipes/123456789")
+    assert response.status_code == 404
+
+def test_crash_endpoint():
+    """Test the /crash endpoint returns 500 error."""
+    response = client.get("/crash")
+    assert response.status_code == 500

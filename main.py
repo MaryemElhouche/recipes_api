@@ -18,7 +18,13 @@ ERROR_COUNT = Counter('error_count', 'Total errors', ['endpoint'])
 from metrics_initializer import lifespan
 
 # --- Création de l'app FastAPI avec lifespan ---
+
 app = FastAPI(title="API Recettes Cuisine", lifespan=lifespan)
+
+# --- Health check endpoint ---
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 # --- Endpoint de test pour générer une erreur 500 ---
 @app.get("/crash")
