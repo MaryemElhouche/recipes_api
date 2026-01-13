@@ -12,8 +12,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
-
+      uses: actions/upload-artifact@v4
     - name: Install Google Chrome
       run: |
         wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
@@ -54,7 +53,7 @@ jobs:
       continue-on-error: true
 
     - name: Upload ZAP Backend Report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4      
       with:
         name: zap-backend-report
         path: zap-backend-report.html
@@ -69,7 +68,7 @@ jobs:
       continue-on-error: true
 
     - name: Upload ZAP Frontend Report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: zap-frontend-report
         path: zap-frontend-report.html
