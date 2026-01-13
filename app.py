@@ -37,9 +37,19 @@ def delete_recipe(recipe_id):
 menu = ["Voir Recettes", "Ajouter Recette", "Modifier Recette", "Supprimer Recette"]
 choice = st.sidebar.selectbox("Menu", menu)
 
+
 if choice == "Voir Recettes":
     st.subheader("📋 Liste des recettes")
     recipes = get_recipes()
+    # Add search box in the sidebar
+    search_query = st.sidebar.text_input("🔍 Rechercher une recette (titre ou ingrédient)")
+    if search_query:
+        search_query_lower = search_query.lower()
+        recipes = [
+            r for r in recipes
+            if search_query_lower in r['title'].lower()
+            or any(search_query_lower in ing.lower() for ing in r['ingredients'])
+        ]
     for r in recipes:
         with st.expander(f"{r['title']} (Pour {r['servings']} personnes)"):
             st.markdown(f"**ID:** {r['id']}")
