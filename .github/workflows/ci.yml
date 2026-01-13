@@ -12,7 +12,8 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/upload-artifact@v4
+      uses: actions/checkout@v4
+
     - name: Install Google Chrome
       run: |
         wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
@@ -33,6 +34,12 @@ jobs:
       run: |
         pip install bandit
         bandit -r . -x venv,__pycache__ -ll
+
+    - name: Start Backend API
+      run: |
+        nohup python app.py --port 8000 &
+        sleep 5
+      continue-on-error: true
 
     - name: Start Streamlit app
       run: |
