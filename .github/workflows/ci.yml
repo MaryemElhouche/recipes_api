@@ -14,7 +14,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-
     - name: Install Google Chrome
       run: |
         wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
@@ -45,32 +44,32 @@ jobs:
       run: |
         pytest -v
 
-      # --- OWASP ZAP Baseline Scan: Backend (API) ---
-      - name: Run OWASP ZAP Baseline Scan (Backend)
-        uses: zaproxy/action-baseline@v0.10.0
-        with:
-          target: 'http://localhost:8000'
-          fail_action: false
-          report: 'zap-backend-report.html'
-        continue-on-error: true
+    # --- OWASP ZAP Baseline Scan: Backend (API) ---
+    - name: Run OWASP ZAP Baseline Scan (Backend)
+      uses: zaproxy/action-baseline@v0.10.0
+      with:
+        target: 'http://localhost:8000'
+        fail_action: false
+        report: 'zap-backend-report.html'
+      continue-on-error: true
 
-      - name: Upload ZAP Backend Report
-        uses: actions/upload-artifact@v3
-        with:
-          name: zap-backend-report
-          path: zap-backend-report.html
+    - name: Upload ZAP Backend Report
+      uses: actions/upload-artifact@v3
+      with:
+        name: zap-backend-report
+        path: zap-backend-report.html
 
-      # --- OWASP ZAP Baseline Scan: Frontend (Streamlit) ---
-      - name: Run OWASP ZAP Baseline Scan (Frontend)
-        uses: zaproxy/action-baseline@v0.10.0
-        with:
-          target: 'http://localhost:8501'
-          fail_action: false
-          report: 'zap-frontend-report.html'
-        continue-on-error: true
+    # --- OWASP ZAP Baseline Scan: Frontend (Streamlit) ---
+    - name: Run OWASP ZAP Baseline Scan (Frontend)
+      uses: zaproxy/action-baseline@v0.10.0
+      with:
+        target: 'http://localhost:8501'
+        fail_action: false
+        report: 'zap-frontend-report.html'
+      continue-on-error: true
 
-      - name: Upload ZAP Frontend Report
-        uses: actions/upload-artifact@v3
-        with:
-          name: zap-frontend-report
-          path: zap-frontend-report.html
+    - name: Upload ZAP Frontend Report
+      uses: actions/upload-artifact@v3
+      with:
+        name: zap-frontend-report
+        path: zap-frontend-report.html
