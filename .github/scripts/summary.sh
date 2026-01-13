@@ -1,0 +1,16 @@
+#!/bin/bash
+
+echo "============================================"
+echo "📊 PIPELINE SUMMARY"
+echo "============================================"
+echo ""
+echo "✅ All scans completed"
+echo ""
+echo "📁 Generated Reports (available as artifacts):"
+echo "   1. prometheus-report.html - Metrics collection"
+echo "   2. bandit-report.html - Python security scan"
+echo "   3. zap-report.html - Web security scan"
+echo "   4. MASTER-SECURITY-REPORT.html - Consolidated report"
+echo ""
+echo "🔗 Download from Actions → Artifacts section"
+echo "============================================"

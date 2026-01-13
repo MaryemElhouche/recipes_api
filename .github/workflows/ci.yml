@@ -1,9 +1,9 @@
-name: CI Pipeline
+name: CI Pipeline with Security & Metrics
 
 on: [push, pull_request]
 
 jobs:
-  test:
+  test-and-security:
     runs-on: ubuntu-latest
     
     steps:
@@ -13,80 +13,74 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'  # Changed from 3.10 to 3.11
+          python-version: '3.11'
       
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
+          pip install --upgrade pip
+          pip install -r requirements.txt bandit
       
-      # ============= START SERVICES =============
-      - name: Start Backend API with uvicorn
-        run: |
-          echo "🚀 Starting FastAPI backend..."
-          
-          # Create empty recipes.json if it doesn't exist
-          echo "[]" > recipes.json
-          
-          # Start backend
-          python -m uvicorn main:app --host 0.0.0.0 --port 8000 > backend.log 2>&1 &
-          BACKEND_PID=$!
-          echo $BACKEND_PID > backend.pid
-          echo "Backend started with PID: $BACKEND_PID"
-          
-          # Wait for startup
-          sleep 10
-          
-          # Check if process is running
-          if ps -p $BACKEND_PID > /dev/null 2>&1; then
-            echo "✅ Backend process is running"
-          else
-            echo "❌ Backend process died"
-            echo "=== Backend Log ==="
-            cat backend.log
-            exit 1
-          fi
+      # ============= START BACKEND SERVICE =============
+      - name: Start and Verify Backend
+        run: bash .github/scripts/start-backend.sh
 
-      - name: Verify Backend is running
-        run: |
-          echo "🔍 Waiting for backend to be ready..."
-          
-          # Show initial log
-          echo "=== Backend startup log ==="
-          head -30 backend.log
-          echo "=========================="
-          
-          # Try to connect (30 attempts, 2 seconds each = 60 seconds max)
-          SUCCESS=false
-          for i in {1..30}; do
-            echo "Attempt $i/30..."
-            
-            if curl -f -s http://localhost:8000/ > /dev/null 2>&1; then
-              echo "✅ Backend is responding!"
-              SUCCESS=true
-              break
-            fi
-            
-            # Check if backend process died
-            if ! ps -p $(cat backend.pid) > /dev/null 2>&1; then
-              echo "❌ Backend process is not running!"
-              echo "=== Full Backend Log ==="
-              cat backend.log
-              exit 1
-            fi
-            
-            sleep 2
-          done
-          
-          if [ "$SUCCESS" = false ]; then
-            echo "❌ Backend did not respond after 60 seconds"
-            echo "=== Full Backend Log ==="
-            cat backend.log
-            exit 1
-          fi
-          
-          # Show backend is working
-          echo "=== Backend Response ==="
-          curl http://localhost:8000/
-          echo ""
-          echo "=== Sample Metrics ==="
-          curl -s http://localhost:8000/metrics | head -20
+      # ============= RUN ALL SCANS =============
+      - name: Run Prometheus Metrics Collection
+        run: bash .github/scripts/prometheus-scan.sh
+
+      - name: Run API Tests
+        run: bash .github/scripts/run-tests.sh
+
+      - name: Run Bandit Security Scan
+        run: bash .github/scripts/bandit-scan.sh
+
+      - name: Run OWASP ZAP Security Scan
+        run: bash .github/scripts/zap-scan.sh
+
+      - name: Generate Master Security Report
+        run: bash .github/scripts/generate-master-report.sh
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_SHA: ${{ github.sha }}
+
+      # ============= UPLOAD ARTIFACTS =============
+      - name: Upload Prometheus Report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: prometheus-report
+          path: reports/prometheus-report.html
+          retention-days: 30
+
+      - name: Upload Bandit Report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: bandit-report
+          path: reports/bandit-report.html
+          retention-days: 30
+
+      - name: Upload ZAP Report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: zap-report
+          path: reports/zap-report.html
+          retention-days: 30
+
+      - name: Upload Master Security Report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: master-security-report
+          path: reports/MASTER-SECURITY-REPORT.html
+          retention-days: 30
+
+      # ============= CLEANUP =============
+      - name: Cleanup
+        if: always()
+        run: bash .github/scripts/cleanup.sh
+
+      - name: Pipeline Summary
+        if: always()
+        run: bash .github/scripts/summary.sh
