@@ -1,4 +1,3 @@
-
 import json
 import uuid
 import time
@@ -6,37 +5,25 @@ import time
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List
 from loguru import logger
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 
+# Prometheus metrics (declare BEFORE importing metrics_initializer)
+REQUEST_COUNT = Counter('request_count', 'Total HTTP requests', ['method', 'endpoint', 'http_status'])
+REQUEST_LATENCY = Histogram('request_latency_seconds', 'HTTP request latency', ['endpoint'])
+ERROR_COUNT = Counter('error_count', 'Total errors', ['endpoint'])
 
-# --- Création de l'app FastAPI ---
-app = FastAPI(title="API Recettes Cuisine")
+# Import lifespan AFTER declaring metrics
+from metrics_initializer import lifespan
+
+# --- Création de l'app FastAPI avec lifespan ---
+app = FastAPI(title="API Recettes Cuisine", lifespan=lifespan)
 
 # --- Endpoint de test pour générer une erreur 500 ---
 @app.get("/crash")
 def crash():
     1 / 0  # Provoque une ZeroDivisionError (erreur 500)
-
-
-# Prometheus metrics
-REQUEST_COUNT = Counter('request_count', 'Total HTTP requests', ['method', 'endpoint', 'http_status'])
-REQUEST_LATENCY = Histogram('request_latency_seconds', 'HTTP request latency', ['endpoint'])
-ERROR_COUNT = Counter('error_count', 'Total errors', ['endpoint'])
-
-# Import metrics_initializer APRÈS la déclaration des métriques
-import metrics_initializer
-
-# --- Observability metrics ---
-metrics = {
-    "request_count": 0,
-    "total_response_time": 0.0,
-    "endpoint_counts": {},  # endpoint: count
-    "error_count": 0,
-    "status_codes": {},     # status_code: count
-}
-
 
 FILE_DB = "recipes.json"
 
@@ -48,7 +35,6 @@ class Recipe(BaseModel):
     steps: List[str]
     servings: int
     prep_time_minutes: int
-
 
 # --- Middleware for logging and metrics ---
 @app.middleware("http")
@@ -71,15 +57,11 @@ async def log_and_metrics_middleware(request: Request, call_next):
         REQUEST_COUNT.labels(request.method, endpoint, 500).inc()
         return JSONResponse(status_code=500, content={"detail": "Internal Server Error", "trace_id": trace_id})
 
-# --- Fonctions utilitaires pour gérer le fichier ---
 @app.get("/")
 def root():
     trace_id = str(uuid.uuid4())
     return {"message": "Bienvenue sur l'API Recettes Cuisine!", "trace_id": trace_id}
-# --- Endpoints CRUD ---
 
-
-# --- Prometheus Metrics endpoint ---
 @app.get("/metrics")
 def metrics():
     return PlainTextResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)
@@ -94,7 +76,8 @@ def load_recipes() -> List[Recipe]:
 
 def save_recipes(recipes: List[Recipe]):
     with open(FILE_DB, "w", encoding="utf-8") as f:
-        json.dump([r.dict() for r in recipes], f, indent=4, ensure_ascii=False)
+        # FIXED: Use model_dump() instead of dict()
+        json.dump([r.model_dump() for r in recipes], f, indent=4, ensure_ascii=False)
 
 # --- Endpoints CRUD ---
 
@@ -138,9 +121,3 @@ def delete_recipe(recipe_id: int):
             save_recipes(recipes)
             return {"message": f"Recette {recipe_id} supprimée"}
     raise HTTPException(status_code=404, detail="Recette non trouvée")
-
-
-
-
-
-
