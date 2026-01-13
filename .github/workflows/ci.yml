@@ -1,71 +1,92 @@
-# ============= START SERVICES =============
-    - name: Start Backend API with uvicorn
-      run: |
-        echo "🚀 Starting FastAPI backend..."
-        
-        # Create empty recipes.json if it doesn't exist
-        echo "[]" > recipes.json
-        
-        # Start backend
-        python -m uvicorn main:app --host 0.0.0.0 --port 8000 > backend.log 2>&1 &
-        BACKEND_PID=$!
-        echo $BACKEND_PID > backend.pid
-        echo "Backend started with PID: $BACKEND_PID"
-        
-        # Wait for startup
-        sleep 10
-        
-        # Check if process is running
-        if ps -p $BACKEND_PID > /dev/null 2>&1; then
-          echo "✅ Backend process is running"
-        else
-          echo "❌ Backend process died"
-          echo "=== Backend Log ==="
-          cat backend.log
-          exit 1
-        fi
+name: CI Pipeline
 
-    - name: Verify Backend is running
-      run: |
-        echo "🔍 Waiting for backend to be ready..."
-        
-        # Show initial log
-        echo "=== Backend startup log ==="
-        head -30 backend.log
-        echo "=========================="
-        
-        # Try to connect (30 attempts, 2 seconds each = 60 seconds max)
-        SUCCESS=false
-        for i in {1..30}; do
-          echo "Attempt $i/30..."
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+      
+      # ============= START SERVICES =============
+      - name: Start Backend API with uvicorn
+        run: |
+          echo "🚀 Starting FastAPI backend..."
           
-          if curl -f -s http://localhost:8000/ > /dev/null 2>&1; then
-            echo "✅ Backend is responding!"
-            SUCCESS=true
-            break
+          # Create empty recipes.json if it doesn't exist
+          echo "[]" > recipes.json
+          
+          # Start backend
+          python -m uvicorn main:app --host 0.0.0.0 --port 8000 > backend.log 2>&1 &
+          BACKEND_PID=$!
+          echo $BACKEND_PID > backend.pid
+          echo "Backend started with PID: $BACKEND_PID"
+          
+          # Wait for startup
+          sleep 10
+          
+          # Check if process is running
+          if ps -p $BACKEND_PID > /dev/null 2>&1; then
+            echo "✅ Backend process is running"
+          else
+            echo "❌ Backend process died"
+            echo "=== Backend Log ==="
+            cat backend.log
+            exit 1
           fi
+
+      - name: Verify Backend is running
+        run: |
+          echo "🔍 Waiting for backend to be ready..."
           
-          # Check if backend process died
-          if ! ps -p $(cat backend.pid) > /dev/null 2>&1; then
-            echo "❌ Backend process is not running!"
+          # Show initial log
+          echo "=== Backend startup log ==="
+          head -30 backend.log
+          echo "=========================="
+          
+          # Try to connect (30 attempts, 2 seconds each = 60 seconds max)
+          SUCCESS=false
+          for i in {1..30}; do
+            echo "Attempt $i/30..."
+            
+            if curl -f -s http://localhost:8000/ > /dev/null 2>&1; then
+              echo "✅ Backend is responding!"
+              SUCCESS=true
+              break
+            fi
+            
+            # Check if backend process died
+            if ! ps -p $(cat backend.pid) > /dev/null 2>&1; then
+              echo "❌ Backend process is not running!"
+              echo "=== Full Backend Log ==="
+              cat backend.log
+              exit 1
+            fi
+            
+            sleep 2
+          done
+          
+          if [ "$SUCCESS" = false ]; then
+            echo "❌ Backend did not respond after 60 seconds"
             echo "=== Full Backend Log ==="
             cat backend.log
             exit 1
           fi
           
-          sleep 2
-        done
-        
-        if [ "$SUCCESS" = false ]; then
-          echo "❌ Backend did not respond after 60 seconds"
-          echo "=== Full Backend Log ==="
-          cat backend.log
-          exit 1
-        fi
-        
-        # Show backend is working
-        echo "=== Backend Response ==="
-        curl http://localhost:8000/
-        echo ""
-        echo "=== Sample Metrics ==="
-        curl -s http://localhost:8000/metrics | head -20
+          # Show backend is working
+          echo "=== Backend Response ==="
+          curl http://localhost:8000/
+          echo ""
+          echo "=== Sample Metrics ==="
+          curl -s http://localhost:8000/metrics | head -20
