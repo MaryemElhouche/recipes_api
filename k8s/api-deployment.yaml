@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recettes-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: recettes-api
+  template:
+    metadata:
+      labels:
+        app: recettes-api
+    spec:
+      containers:
+      - name: api
+        image: <your-dockerhub-username>/myapi:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        volumeMounts:
+        - name: recipes-volume
+          mountPath: /app/recipes.json
+          subPath: recipes.json
+      volumes:
+      - name: recipes-volume
+        configMap:
+          name: recipes-config
