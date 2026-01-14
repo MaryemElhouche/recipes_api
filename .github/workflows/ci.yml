@@ -5,21 +5,31 @@ on: [push, pull_request]
 jobs:
   test-and-security:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-      
+        uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-      
+
+      # ============= CACHE PIP DEPENDENCIES =============
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # ============= INSTALL DEPENDENCIES =============
       - name: Install dependencies
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt bandit
-      
+
       # ============= START BACKEND SERVICE =============
       - name: Start and Verify Backend
         run: bash .github/scripts/start-backend.sh
